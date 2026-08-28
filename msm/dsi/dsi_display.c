@@ -23,6 +23,7 @@
 #include "dsi_pwr.h"
 #include "sde_dbg.h"
 #include "dsi_parser.h"
+#include "../meizu/meizu_display_adfr.h"
 
 #define to_dsi_display(x) container_of(x, struct dsi_display, host)
 #define INT_BASE_10 10
@@ -278,6 +279,7 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 
 error:
 	mutex_unlock(&panel->panel_lock);
+	meizu_display_adfr_active();
 	return rc;
 }
 
@@ -1379,6 +1381,8 @@ int dsi_display_set_power(struct drm_connector *connector,
 			rc ? "failed" : "successful");
 	if (!rc)
 		display->panel->power_mode = power_mode;
+	if (!rc && power_mode == SDE_MODE_DPMS_ON)
+		meizu_display_adfr_active();
 
 	return rc;
 }
@@ -5997,6 +6001,11 @@ static int dsi_display_init(struct dsi_display *display)
 		DSI_ERR("device init failed, rc=%d\n", rc);
 		goto end;
 	}
+
+	rc = meizu_display_adfr_init(display);
+	if (rc)
+		DSI_WARN("Meizu display adaptation init failed, rc=%d\n", rc);
+	rc = 0;
 
 	/*
 	 * Vote on panel regulator is added to make sure panel regulators

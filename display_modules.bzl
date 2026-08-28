@@ -138,6 +138,10 @@ module_entry(
             "msm/dsi/dsi_panel.c",
             "msm/dsi/dsi_clk_manager.c",
             "msm/dsi/dsi_display_test.c",
+            "msm/meizu/meizu_display_adfr.c",
+            "msm/meizu/meizu_display_adfr.h",
+            "msm/meizu/meizu_display_adfr_logic.c",
+            "msm/meizu/meizu_display_adfr_logic.h",
          ],
          "CONFIG_DSI_PARSER" : [
             "msm/dsi/dsi_parser.c",

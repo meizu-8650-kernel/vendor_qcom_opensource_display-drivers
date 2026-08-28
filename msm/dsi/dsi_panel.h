@@ -372,6 +372,8 @@ int dsi_panel_set_lp2(struct dsi_panel *panel);
 
 int dsi_panel_set_nolp(struct dsi_panel *panel);
 
+int dsi_panel_tx_cmd_set(struct dsi_panel *panel, enum dsi_cmd_set_type type);
+
 int dsi_panel_prepare(struct dsi_panel *panel);
 
 int dsi_panel_enable(struct dsi_panel *panel);

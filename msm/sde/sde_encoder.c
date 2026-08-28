@@ -46,6 +46,7 @@
 #include "sde_encoder_dce.h"
 #include "sde_vm.h"
 #include "sde_fence.h"
+#include "../meizu/meizu_display_adfr.h"
 
 #define SDE_DEBUG_ENC(e, fmt, ...) SDE_DEBUG("enc%d " fmt,\
 		(e) ? (e)->base.base.id : -1, ##__VA_ARGS__)
@@ -3582,6 +3583,7 @@ static void sde_encoder_off_work(struct kthread_work *work)
 	drm_enc = &sde_enc->base;
 
 	SDE_ATRACE_BEGIN("sde_encoder_off_work");
+	meizu_display_adfr_handle_idle(true);
 	sde_encoder_idle_request(drm_enc);
 	SDE_ATRACE_END("sde_encoder_off_work");
 }
@@ -5394,6 +5396,8 @@ void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool config_changed)
 	}
 	if (sde_enc->cur_master)
 		_sde_encoder_update_retire_txq(sde_enc->cur_master, sde_kms);
+
+	meizu_display_adfr_handle_idle(false);
 
 	/* delay frame kickoff based on expected present time */
 	_sde_encoder_delay_kickoff_processing(sde_enc);

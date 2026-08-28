@@ -23,6 +23,7 @@
 #include "sde_dbg.h"
 #include "sde_dsc_helper.h"
 #include "sde_vdc_helper.h"
+#include "../meizu/meizu_display_adfr.h"
 
 /**
  * topology is currently defined by a set of following 3 values:
@@ -434,8 +435,8 @@ static int dsi_panel_power_off(struct dsi_panel *panel)
 
 	return rc;
 }
-static int dsi_panel_tx_cmd_set(struct dsi_panel *panel,
-				enum dsi_cmd_set_type type)
+
+int dsi_panel_tx_cmd_set(struct dsi_panel *panel, enum dsi_cmd_set_type type)
 {
 	int rc = 0, i = 0;
 	ssize_t len;
@@ -569,6 +570,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	}
 
 	dsi = &panel->mipi_device;
+	meizu_display_adfr_before_backlight(panel);
 	if (unlikely(panel->bl_config.lp_mode)) {
 		mode_flags = dsi->mode_flags;
 		dsi->mode_flags |= MIPI_DSI_MODE_LPM;
@@ -583,6 +585,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 
 	if (unlikely(panel->bl_config.lp_mode))
 		dsi->mode_flags = mode_flags;
+	meizu_display_adfr_after_backlight(panel);
 
 	return rc;
 }
@@ -1893,12 +1896,18 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-lp1-command",
 	"qcom,mdss-dsi-lp2-command",
 	"qcom,mdss-dsi-nolp-command",
+	"qcom,mdss-dsi-aod-high-nolp-command",
+	"qcom,mdss-dsi-aod-low-nolp-command",
 	"PPS not parsed from DTSI, generated dynamically",
 	"ROI not parsed from DTSI, generated dynamically",
 	"qcom,mdss-dsi-timing-switch-command",
 	"qcom,mdss-dsi-post-mode-switch-on-command",
 	"qcom,mdss-dsi-qsync-on-commands",
 	"qcom,mdss-dsi-qsync-off-commands",
+	"qcom,mdss-dsi-adfr-on-command",
+	"qcom,mdss-dsi-adfr-off-command",
+	"qcom,mdss-dsi-aod-high-mode-command",
+	"qcom,mdss-dsi-aod-low-mode-command",
 	"qcom,mdss-dsi-calibration-commands",
 };
 
@@ -1922,12 +1931,18 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-lp1-command-state",
 	"qcom,mdss-dsi-lp2-command-state",
 	"qcom,mdss-dsi-nolp-command-state",
+	"qcom,mdss-dsi-aod-high-nolp-command-state",
+	"qcom,mdss-dsi-aod-low-nolp-command-state",
 	"PPS not parsed from DTSI, generated dynamically",
 	"ROI not parsed from DTSI, generated dynamically",
 	"qcom,mdss-dsi-timing-switch-command-state",
 	"qcom,mdss-dsi-post-mode-switch-on-command-state",
 	"qcom,mdss-dsi-qsync-on-commands-state",
 	"qcom,mdss-dsi-qsync-off-commands-state",
+	"qcom,mdss-dsi-adfr-on-command-state",
+	"qcom,mdss-dsi-adfr-off-command-state",
+	"qcom,mdss-dsi-aod-high-mode-command-state",
+	"qcom,mdss-dsi-aod-low-mode-command-state",
 	"qcom,mdss-dsi-calibration-commands-state",
 };
 
@@ -4900,7 +4915,7 @@ int dsi_panel_set_nolp(struct dsi_panel *panel)
 	     panel->power_mode == SDE_MODE_DPMS_LP2))
 		dsi_pwr_panel_regulator_mode_set(&panel->power_info,
 			"ibb", REGULATOR_MODE_NORMAL);
-	rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NOLP);
+	rc = dsi_panel_tx_cmd_set(panel, meizu_display_adfr_nolp_cmd(panel));
 	if (rc)
 		DSI_ERR("[%s] failed to send DSI_CMD_SET_NOLP cmd, rc=%d\n",
 		       panel->name, rc);
@@ -5212,6 +5227,7 @@ int dsi_panel_switch(struct dsi_panel *panel)
 	if (rc)
 		DSI_ERR("[%s] failed to send DSI_CMD_SET_TIMING_SWITCH cmds, rc=%d\n",
 		       panel->name, rc);
+	meizu_display_adfr_mode_switch(panel);
 
 	mutex_unlock(&panel->panel_lock);
 	return rc;
@@ -5362,6 +5378,7 @@ int dsi_panel_disable(struct dsi_panel *panel)
 	}
 	panel->panel_initialized = false;
 	panel->power_mode = SDE_MODE_DPMS_OFF;
+	meizu_display_adfr_panel_disable();
 
 	mutex_unlock(&panel->panel_lock);
 	return rc;
