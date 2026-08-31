@@ -24,6 +24,7 @@
 #include "sde_dsc_helper.h"
 #include "sde_vdc_helper.h"
 #include "../meizu/meizu_display_adfr.h"
+#include "../meizu/meizu_display_brightness.h"
 
 /**
  * topology is currently defined by a set of following 3 values:
@@ -4712,6 +4713,12 @@ int dsi_panel_get_mode(struct dsi_panel *panel,
 		rc = dsi_panel_parse_partial_update_caps(mode, utils);
 		if (rc)
 			DSI_ERR("failed to partial update caps, rc=%d\n", rc);
+
+		rc = display_brightness_parse_vsync_config(mode, utils);
+		if (rc) {
+			DSI_ERR("failed to parse vsync config, rc=%d\n", rc);
+			goto parse_fail;
+		}
 	}
 
 parse_fail:

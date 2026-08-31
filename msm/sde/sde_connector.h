@@ -575,6 +575,7 @@ struct sde_misr_sign {
  * @cmd_rx_buf: the return buffer of response of command transfer
  * @rx_len: the length of dcs command received buffer
  * @cached_edid: cached edid data for the connector
+ * @bl_need_sync: Flag to apply a pending atomic brightness at kickoff
  * @misr_event_notify_enabled: Flag to indicate if misr event notify is enabled or not
  * @previous_misr_sign: store previous misr signature
  * @hwfence_wb_retire_fences_enable: enable hw-fences for wb retire-fence
@@ -657,6 +658,7 @@ struct sde_connector {
 	int rx_len;
 
 	struct edid *cached_edid;
+	bool bl_need_sync;
 	bool misr_event_notify_enabled;
 	struct sde_misr_sign previous_misr_sign;
 

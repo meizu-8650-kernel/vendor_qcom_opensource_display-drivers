@@ -47,6 +47,7 @@
 #include "sde_vm.h"
 #include "sde_fence.h"
 #include "../meizu/meizu_display_adfr.h"
+#include "../meizu/meizu_display_brightness.h"
 
 #define SDE_DEBUG_ENC(e, fmt, ...) SDE_DEBUG("enc%d " fmt,\
 		(e) ? (e)->base.base.id : -1, ##__VA_ARGS__)
@@ -5398,6 +5399,8 @@ void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool config_changed)
 		_sde_encoder_update_retire_txq(sde_enc->cur_master, sde_kms);
 
 	meizu_display_adfr_handle_idle(false);
+	if (display_brightness_is_enable_synclights())
+		display_sync_panel_brightness(drm_enc);
 
 	/* delay frame kickoff based on expected present time */
 	_sde_encoder_delay_kickoff_processing(sde_enc);

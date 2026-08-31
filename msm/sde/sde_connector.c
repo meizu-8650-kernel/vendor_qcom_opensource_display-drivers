@@ -986,6 +986,9 @@ static int _sde_connector_update_dirty_properties(
 						CONNECTOR_PROP_BRIGHTNESS);
 			backlight_device_set_brightness(c_conn->bl_device, b_lvl);
 			break;
+		case CONNECTOR_PROP_SYNC_BL:
+			WRITE_ONCE(c_conn->bl_need_sync, true);
+			break;
 		default:
 			/* nothing to do for most properties */
 			break;
@@ -3336,6 +3339,9 @@ static int _sde_connector_install_properties(struct drm_device *dev,
 			msm_property_install_range(&c_conn->property_info, "brightness",
 			0x0, 0, 0xFFFF, 0,
 			CONNECTOR_PROP_BRIGHTNESS);
+			msm_property_install_volatile_range(&c_conn->property_info,
+							    "sync_bl", 0x0, 0, ~0, 0,
+							    CONNECTOR_PROP_SYNC_BL);
 		}
 	}
 

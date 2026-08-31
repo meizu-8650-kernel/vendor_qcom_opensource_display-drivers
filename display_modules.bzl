@@ -142,6 +142,8 @@ module_entry(
             "msm/meizu/meizu_display_adfr.h",
             "msm/meizu/meizu_display_adfr_logic.c",
             "msm/meizu/meizu_display_adfr_logic.h",
+            "msm/meizu/meizu_display_brightness.c",
+            "msm/meizu/meizu_display_brightness.h",
          ],
          "CONFIG_DSI_PARSER" : [
             "msm/dsi/dsi_parser.c",

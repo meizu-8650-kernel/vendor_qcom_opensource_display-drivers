@@ -20,6 +20,7 @@
 #include "../dsi/dsi_panel.h"
 #include "meizu_display_adfr.h"
 #include "meizu_display_adfr_logic.h"
+#include "meizu_display_brightness.h"
 
 #define MEIZU_PANEL_NAME "NT37290_BOE_DSC"
 #define MEIZU_BACKLIGHT_HBM_THRESHOLD 1470
@@ -65,7 +66,6 @@ struct meizu_display_adfr {
 static DEFINE_MUTEX(meizu_adfr_lifecycle_lock);
 static DEFINE_MUTEX(meizu_star_lock);
 static char meizu_star_brightness[128] = "0 0.0";
-static bool meizu_synclights_enable = true;
 static struct meizu_display_adfr meizu_adfr = {
 	.dynamic_te_gpio = -EINVAL,
 	.dynamic_te_irq = -EINVAL,
@@ -556,7 +556,8 @@ static ssize_t star_brightness_store(struct kobject *kobj,
 static ssize_t synclights_enable_show(struct kobject *kobj,
 				      struct kobj_attribute *attr, char *buf)
 {
-	return sysfs_emit(buf, "%u\n", READ_ONCE(meizu_synclights_enable));
+	return sysfs_emit(buf, "%u\n",
+			  display_brightness_is_enable_synclights());
 }
 
 static ssize_t synclights_enable_store(struct kobject *kobj,
@@ -567,7 +568,7 @@ static ssize_t synclights_enable_store(struct kobject *kobj,
 
 	if (kstrtouint(buf, 0, &enabled))
 		return -EINVAL;
-	WRITE_ONCE(meizu_synclights_enable, !!enabled);
+	WRITE_ONCE(synclights_enable, !!enabled);
 	return count;
 }
 
