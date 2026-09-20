@@ -4913,6 +4913,8 @@ int dsi_panel_set_nolp(struct dsi_panel *panel)
 	mutex_lock(&panel->panel_lock);
 	if (!panel->panel_initialized)
 		goto exit;
+	if (!meizu_display_adfr_needs_nolp(panel))
+		goto exit;
 
 	/*
 	 * Consider about LP1->LP2->NOLP.

@@ -316,6 +316,15 @@ void meizu_display_adfr_handle_idle(bool enter_idle)
 		meizu_adfr_update_min_fps(48);
 }
 
+bool meizu_display_adfr_needs_nolp(const struct dsi_panel *panel)
+{
+	if (!meizu_adfr_panel_supported(panel) ||
+	    !meizu_display_adfr_is_supported())
+		return true;
+
+	return atomic_read(&meizu_adfr.aod_light_mode) != 2;
+}
+
 enum dsi_cmd_set_type meizu_display_adfr_nolp_cmd(const struct dsi_panel *panel)
 {
 	if (!meizu_adfr_panel_supported(panel) ||
