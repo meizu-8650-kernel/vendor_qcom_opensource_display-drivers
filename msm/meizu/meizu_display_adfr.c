@@ -45,6 +45,7 @@ struct meizu_display_adfr {
 	atomic_t last_min_fps;
 	atomic_t last_refresh_rate;
 	atomic_t backlight_type;
+	atomic_t backlight_min_fps;
 	atomic_t timer_active;
 	atomic_t exit_idle_count;
 	atomic_t dynamic_te_enabled;
@@ -219,7 +220,8 @@ void meizu_display_adfr_before_backlight(struct dsi_panel *panel)
 	      (backlight <= MEIZU_BACKLIGHT_HBM_THRESHOLD && type == 1)))
 		return;
 
-	atomic_set(&meizu_adfr.last_min_fps, atomic_read(&meizu_adfr.min_fps));
+	atomic_set(&meizu_adfr.backlight_min_fps,
+		   atomic_read(&meizu_adfr.min_fps));
 	meizu_adfr_send_min_fps_locked(panel, 0);
 }
 
@@ -231,9 +233,9 @@ void meizu_display_adfr_after_backlight(struct dsi_panel *panel)
 	    !meizu_adfr_panel_supported(panel))
 		return;
 
-	if (atomic_read(&meizu_adfr.last_min_fps)) {
+	if (atomic_read(&meizu_adfr.backlight_min_fps)) {
 		meizu_adfr_send_min_fps_locked(panel, 48);
-		atomic_set(&meizu_adfr.last_min_fps, 0);
+		atomic_set(&meizu_adfr.backlight_min_fps, 0);
 	}
 
 	backlight = panel->bl_config.bl_level;
@@ -284,6 +286,7 @@ void meizu_display_adfr_handle_idle(bool enter_idle)
 {
 	struct dsi_display *display = READ_ONCE(meizu_adfr.display);
 	struct dsi_panel *panel;
+	bool dynamic_te;
 	int exit_count;
 
 	if (!meizu_display_adfr_is_supported() || !display || !display->panel)
@@ -295,25 +298,34 @@ void meizu_display_adfr_handle_idle(bool enter_idle)
 	    !dsi_panel_initialized(panel) || !atomic_read(&meizu_adfr.min_fps))
 		return;
 
+	dynamic_te = atomic_read(&meizu_adfr.dynamic_te_enabled);
 	if (enter_idle) {
 		exit_count = atomic_read(&meizu_adfr.exit_idle_count);
-		if (!atomic_read(&meizu_adfr.dynamic_te_enabled) &&
-		    atomic_read(&meizu_adfr.min_fps) != 48)
-			meizu_adfr_update_min_fps(48);
-		if (exit_count >= 2 &&
-		    !atomic_xchg(&meizu_adfr.timer_active, 1))
-			hrtimer_start(&meizu_adfr.drop_timer,
-				      ns_to_ktime(MEIZU_IDLE_DROP_DELAY_NS),
-				      HRTIMER_MODE_REL);
+		if (exit_count >= 2) {
+			if (!dynamic_te && atomic_read(&meizu_adfr.min_fps) != 48)
+				meizu_adfr_update_min_fps(48);
+			if (!atomic_xchg(&meizu_adfr.timer_active, 1))
+				hrtimer_start(&meizu_adfr.drop_timer,
+					      ns_to_ktime(MEIZU_IDLE_DROP_DELAY_NS),
+					      HRTIMER_MODE_REL);
+		}
 		atomic_set(&meizu_adfr.exit_idle_count, 0);
 		return;
 	}
 
-	atomic_inc(&meizu_adfr.exit_idle_count);
-	if (atomic_xchg(&meizu_adfr.timer_active, 0))
+	if (dynamic_te && atomic_inc_return(&meizu_adfr.exit_idle_count) < 2)
+		return;
+	if (atomic_xchg(&meizu_adfr.timer_active, 0)) {
 		hrtimer_cancel(&meizu_adfr.drop_timer);
-	if (atomic_read(&meizu_adfr.min_fps) != 48)
-		meizu_adfr_update_min_fps(48);
+		if (dynamic_te && atomic_read(&meizu_adfr.exit_idle_count) < 2)
+			return;
+	}
+	if (dynamic_te) {
+		if (atomic_read(&meizu_adfr.min_fps) != 48)
+			meizu_adfr_update_min_fps(48);
+	} else {
+		atomic_inc(&meizu_adfr.exit_idle_count);
+	}
 }
 
 bool meizu_display_adfr_needs_nolp(const struct dsi_panel *panel)
